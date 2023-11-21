@@ -77,102 +77,105 @@ transport.enable-client-batch-send-request、client.log.exceptionRate
 
 ### server端
 
-| key| desc         | remark| change record |
-|-------------------------------------------|---------------------------------|----------------------------|----------------|
-| server.undo.logSaveDays            | undo保留天数                  |默认7天,log_status=1（附录3）和未正常清理的undo |
-| server.undo.logDeletePeriod        | undo清理线程间隔时间          |默认86400000，单位毫秒    |
+| key| desc         | remark                                                                                                                                              | change record |
+|-------------------------------------------|---------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|----------------|
+| server.undo.logSaveDays            | undo保留天数                  | 默认7天,log_status=1（附录3）和未正常清理的undo                                                                                                                   |
+| server.undo.logDeletePeriod        | undo清理线程间隔时间          | 默认86400000，单位毫秒                                                                                                                                     |
 | server.maxCommitRetryTimeout          | 二阶段提交重试超时时长          | 单位ms,s,m,h,d,对应毫秒,秒,分,小时,天,默认毫秒。默认值-1表示无限重试。公式: timeout>=now-globalTransactionBeginTime,true表示超时则不再重试(注: 达到超时时间后将不会做任何重试,有数据不一致风险,除非业务自行可校准数据,否者慎用) |
-| server.maxRollbackRetryTimeout        | 二阶段回滚重试超时时长           |  同commit  |
-| server.recovery.committingRetryPeriod          | 二阶段提交未完成状态全局事务重试提交线程间隔时间 |默认1000，单位毫秒    |
-| server.recovery.asynCommittingRetryPeriod     | 二阶段异步提交状态重试提交线程间隔时间       |默认1000，单位毫秒    |
-| server.recovery.rollbackingRetryPeriod         | 二阶段回滚状态重试回滚线程间隔时间      |默认1000，单位毫秒    |
-| server.recovery.timeoutRetryPeriod             | 超时状态检测重试线程间隔时间        |默认1000，单位毫秒，检测出超时将全局事务置入回滚会话管理器    |
-| server.rollbackRetryTimeoutUnlockEnable | 二阶段回滚超时后是否释放锁 | 默认false |
-| server.distributedLockExpireTime | Sever端事务管理全局锁超时时间 | 默认10000，单位毫秒 | 1.5.1版本新增 |
-| server.server.xaerNotaRetryTimeout | 防止XA分支事务悬挂的重试超时时间 | 默认60000，单位毫秒 | 1.5.1版本新增 |
-| server.session.branchAsyncQueueSize | 分支事务Session异步删除线程池队列大小 | 默认5000 | 1.5.1版本新增 |
-| server.session.enableBranchAsyncRemove | 分支事务Session异步删除开关 | 默认false | 1.5.1版本新增 |
-| server.enableParallelRequestHandle | 对于批量请求消息的并行处理开关 | 默认false | 1.5.2版本新增 |
-| store.mode                                | 事务会话信息存储方式 |file本地文件(不支持HA)，db数据库，redis(支持HA)    | 1.5.1版本改用lock和session分离存储 |
-| store.lock.mode | 事务锁信息存储方式 | file本地文件(不支持HA)，db数据库，redis(支持HA)；配置为空时，取store.mode配置项值 | 1.5.1版本新增，session和lock可分离存储 |
-| store.session.mode | 事务回话信息存储方式 | file本地文件(不支持HA)，db数据库，redis(支持HA)；配置为空时，取store.mode配置项值 | 1.5.1版本新增，session和lock可分离存储 |
-| store.publicKey | db或redis存储密码解密公钥 | | 1.4.2版本支持 |
-| store.file.dir                            | file模式文件存储文件夹名 |默认sessionStore    |
-| store.file.maxBranchSessionSize | file模式文件存储分支session最大字节数 | 默认16384(16kb),单位byte | 
-| store.file.maxGlobalSessionSize | file模式文件存储全局session最大字节数 | 默认512b，单位byte |
-| store.file.fileWriteBufferCacheSize | file模式文件存储buffer最大缓存大小 | 默认16384(16kb)，单位byte,写入session等数据量大于该值时会抛出异常 |
-| store.file.flushDiskMode | file模式文件存储刷盘策略 | 默认async，可选sync |
-| store.file.sessionReloadReadSize | file模式文件存储Server节点重启后从备份文件中恢复的session或lock key上限个数 | 默认100 |
-| store.db.datasource                       | db模式数据源类型 |dbcp、druid、hikari；无默认值，store.mode=db时必须指定    |
-| store.db.dbType                          | db模式数据库类型 |mysql、oracle、db2、sqlserver、sybaee、h2、sqlite、access、postgresql、oceanbase；无默认值，store.mode=db时必须指定。   |
-| store.db.driverClassName                | db模式数据库驱动 |store.mode=db时必须指定    |
-| store.db.url                              | db模式数据库url | store.mode=db时必须指定，在使用mysql作为数据源时，建议在连接参数中加上`rewriteBatchedStatements=true`(详细原因请阅读附录7)   |
-| store.db.user                             | db模式数据库账户 |store.mode=db时必须指定    |
-| store.db.password                         | db模式数据库账户密码 |store.mode=db时必须指定    |
-| store.db.minConn                         | db模式数据库初始连接数 |默认1    |
-| store.db.maxConn                         | db模式数据库最大连接数|默认20    |
-| store.db.maxWait                         | db模式获取连接时最大等待时间 |默认5000，单位毫秒    |
-| store.db.globalTable                     | db模式全局事务表名 |默认global_table    |
-| store.db.branchTable                     | db模式分支事务表名 |默认branch_table    |
-| store.db.lockTable                       | db模式全局锁表名 |默认lock_table    |
-| store.db.queryLimit                      | db模式查询全局事务一次的最大条数 |默认100    |
-| store.db.distributedLockTable | db模式Sever端事务管理全局锁存储表名 | 默认distributed_lock，多Sever集群下保证同时只有一个Sever处理提交或回滚 | 1.5.1版本新增|
-| store.redis.mode | redis模式 | 默认single,可选sentinel| 1.4.2版本新增sentinel模式 | 
-| store.redis.single.host | 单机模式下redis的host,兼容1.4.2之前的版本，该配置为空时选取store.redis.host作为配置项 | 1.4.2版本新增 |
-| store.redis.single.port | 单机模式下redis的port,兼容1.4.2之前的版本，该配置为空时选取store.redis.port作为配置项 | 1.4.2版本新增 |
-| store.redis.sentinel.masterName | sentinel模式下redis的主库名称| | 1.4.2版本新增 |
-| store.redis.sentinel.sentinelHosts | sentinel模式下sentinel的hosts|多hosts以逗号分隔| 1.4.2版本新增 |
-| store.redis.host | redis模式ip |默认127.0.0.1 | 1.4.2版本弃用 |
-| store.redis.port | redis模式端口 |默认6379 | 1.4.2版本弃用 |
-| store.redis.maxConn | redis模式最大连接数 |默认10 |
-| store.redis.minConn | redis模式最小连接数 |默认1 |
-| store.redis.database | redis模式默认库 |默认0 |
-| store.redis.password | redis模式密码(无可不填) |默认null |
-| store.redis.queryLimit | redis模式一次查询最大条数 |默认100 |
-| metrics.enabled                           | 是否启用Metrics  |默认false关闭，在False状态下，所有与Metrics相关的组件将不会被初始化，使得性能损耗最低|
-| metrics.registryType                     | 指标注册器类型    |Metrics使用的指标注册器类型，默认为内置的compact（简易）实现，这个实现中的Meter仅使用有限内存计数，性能高足够满足大多数场景；目前只能设置一个指标注册器实现 |
-| metrics.exporterList                     | 指标结果Measurement数据输出器列表   |默认prometheus，多个输出器使用英文逗号分割，例如"prometheus,jmx"，目前仅实现了对接prometheus的输出器 |
-| metrics.exporterPrometheusPort          | prometheus输出器Client端口号   |默认9898 |
+| server.maxRollbackRetryTimeout        | 二阶段回滚重试超时时长           | 同commit                                                                                                                                             |
+| server.recovery.committingRetryPeriod          | 二阶段提交未完成状态全局事务重试提交线程间隔时间 | 默认1000，单位毫秒                                                                                                                                         |
+| server.recovery.asynCommittingRetryPeriod     | 二阶段异步提交状态重试提交线程间隔时间       | 默认1000，单位毫秒                                                                                                                                         |
+| server.recovery.rollbackingRetryPeriod         | 二阶段回滚状态重试回滚线程间隔时间      | 默认1000，单位毫秒                                                                                                                                         |
+| server.recovery.timeoutRetryPeriod             | 超时状态检测重试线程间隔时间        | 默认1000，单位毫秒，检测出超时将全局事务置入回滚会话管理器                                                                                                                     |
+| server.rollbackRetryTimeoutUnlockEnable | 二阶段回滚超时后是否释放锁 | 默认false                                                                                                                                             |
+| server.distributedLockExpireTime | Sever端事务管理全局锁超时时间 | 默认10000，单位毫秒                                                                                                                                        | 1.5.1版本新增 |
+| server.server.xaerNotaRetryTimeout | 防止XA分支事务悬挂的重试超时时间 | 默认60000，单位毫秒                                                                                                                                        | 1.5.1版本新增 |
+| server.session.branchAsyncQueueSize | 分支事务Session异步删除线程池队列大小 | 默认5000                                                                                                                                              | 1.5.1版本新增 |
+| server.session.enableBranchAsyncRemove | 分支事务Session异步删除开关 | 默认false                                                                                                                                             | 1.5.1版本新增 |
+| server.enableParallelRequestHandle | 对于批量请求消息的并行处理开关 | 默认false                                                                                                                                             | 1.5.2版本新增 |
+| store.mode                                | 事务会话信息存储方式 | file本地文件(不支持HA)，db数据库，redis(支持HA)                                                                                                                   | 1.5.1版本改用lock和session分离存储 |
+| store.lock.mode | 事务锁信息存储方式 | file本地文件(不支持HA)，db数据库，redis(支持HA)；配置为空时，取store.mode配置项值                                                                                             | 1.5.1版本新增，session和lock可分离存储 |
+| store.session.mode | 事务回话信息存储方式 | file本地文件(不支持HA)，db数据库，redis(支持HA)；配置为空时，取store.mode配置项值                                                                                             | 1.5.1版本新增，session和lock可分离存储 |
+| store.publicKey | db或redis存储密码解密公钥 |                                                                                                                                                     | 1.4.2版本支持 |
+| store.file.dir                            | file模式文件存储文件夹名 | 默认sessionStore                                                                                                                                      |
+| store.file.maxBranchSessionSize | file模式文件存储分支session最大字节数 | 默认16384(16kb),单位byte                                                                                                                                | 
+| store.file.maxGlobalSessionSize | file模式文件存储全局session最大字节数 | 默认512b，单位byte                                                                                                                                       |
+| store.file.fileWriteBufferCacheSize | file模式文件存储buffer最大缓存大小 | 默认16384(16kb)，单位byte,写入session等数据量大于该值时会抛出异常                                                                                                        |
+| store.file.flushDiskMode | file模式文件存储刷盘策略 | 默认async，可选sync                                                                                                                                      |
+| store.file.sessionReloadReadSize | file模式文件存储Server节点重启后从备份文件中恢复的session或lock key上限个数 | 默认100                                                                                                                                               |
+| store.db.datasource                       | db模式数据源类型 | dbcp、druid、hikari；无默认值，store.mode=db时必须指定                                                                                                           |
+| store.db.dbType                          | db模式数据库类型 | mysql、oracle、db2、sqlserver、sybaee、h2、sqlite、access、postgresql、oceanbase；无默认值，store.mode=db时必须指定。                                                    |
+| store.db.driverClassName                | db模式数据库驱动 | store.mode=db时必须指定                                                                                                                                  |
+| store.db.url                              | db模式数据库url | store.mode=db时必须指定，在使用mysql作为数据源时，建议在连接参数中加上`rewriteBatchedStatements=true`(详细原因请阅读附录7)                                                             |
+| store.db.user                             | db模式数据库账户 | store.mode=db时必须指定                                                                                                                                  |
+| store.db.password                         | db模式数据库账户密码 | store.mode=db时必须指定                                                                                                                                  |
+| store.db.minConn                         | db模式数据库初始连接数 | 默认1                                                                                                                                                 |
+| store.db.maxConn                         | db模式数据库最大连接数| 默认20                                                                                                                                                |
+| store.db.maxWait                         | db模式获取连接时最大等待时间 | 默认5000，单位毫秒                                                                                                                                         |
+| store.db.globalTable                     | db模式全局事务表名 | 默认global_table                                                                                                                                      |
+| store.db.branchTable                     | db模式分支事务表名 | 默认branch_table                                                                                                                                      |
+| store.db.lockTable                       | db模式全局锁表名 | 默认lock_table                                                                                                                                        |
+| store.db.queryLimit                      | db模式查询全局事务一次的最大条数 | 默认100                                                                                                                                               |
+| store.db.distributedLockTable | db模式Sever端事务管理全局锁存储表名 | 默认distributed_lock，多Sever集群下保证同时只有一个Sever处理提交或回滚                                                                                                    | 1.5.1版本新增|
+| store.redis.mode | redis模式 | 默认single,可选sentinel                                                                                                                                 | 1.4.2版本新增sentinel模式 | 
+| store.redis.single.host | 单机模式下redis的host,兼容1.4.2之前的版本，该配置为空时选取store.redis.host作为配置项 | 1.4.2版本新增                                                                                                                                           |
+| store.redis.single.port | 单机模式下redis的port,兼容1.4.2之前的版本，该配置为空时选取store.redis.port作为配置项 | 1.4.2版本新增                                                                                                                                           |
+| store.redis.sentinel.masterName | sentinel模式下redis的主库名称|                                                                                                                                                     | 1.4.2版本新增 |
+| store.redis.sentinel.sentinelHosts | sentinel模式下sentinel的hosts| 多hosts以逗号分隔                                                                                                                                         | 1.4.2版本新增 |
+| store.redis.host | redis模式ip | 默认127.0.0.1                                                                                                                                         | 1.4.2版本弃用 |
+| store.redis.port | redis模式端口 | 默认6379                                                                                                                                              | 1.4.2版本弃用 |
+| store.redis.maxConn | redis模式最大连接数 | 默认10                                                                                                                                                |
+| store.redis.minConn | redis模式最小连接数 | 默认1                                                                                                                                                 |
+| store.redis.database | redis模式默认库 | 默认0                                                                                                                                                 |
+| store.redis.password | redis模式密码(无可不填) | 默认null                                                                                                                                              |
+| store.redis.queryLimit | redis模式一次查询最大条数 | 默认100                                                                                                                                               |
+| metrics.enabled                           | 是否启用Metrics  | 默认false关闭，在False状态下，所有与Metrics相关的组件将不会被初始化，使得性能损耗最低                                                                                                 |
+| metrics.registryType                     | 指标注册器类型    | Metrics使用的指标注册器类型，默认为内置的compact（简易）实现，这个实现中的Meter仅使用有限内存计数，性能高足够满足大多数场景；目前只能设置一个指标注册器实现                                                             |
+| metrics.exporterList                     | 指标结果Measurement数据输出器列表   | 默认prometheus，多个输出器使用英文逗号分割，例如"prometheus,jmx"，目前仅实现了对接prometheus的输出器                                                                                |
+| metrics.exporterPrometheusPort          | prometheus输出器Client端口号   | 默认9898                                                                                                                                              |
+| server.applicationDataLimitCheck     |是否开启应用数据大小检查 | 默认false                                                                                                                                             |
+| server.applicationDataLimit | 应用数据大小限制 | 默认64000                                                                                                                                             |
 
 ### client端
 
-| key| desc    | remark| change record |
-|-------------------------------------------|----------------------------|----------------------------|----------------|
-| seata.enabled   | 是否开启spring-boot自动装配   |true、false,(SSBS)专有配置，默认true（附录4） |
-| seata.enableAutoDataSourceProxy=true | 是否开启数据源自动代理 | true、false,seata-spring-boot-starter(SSBS)专有配置,SSBS默认会开启数据源自动代理,可通过该配置项关闭.|
-| seata.useJdkProxy=false |  是否使用JDK代理作为数据源自动代理的实现方式| true、false,(SSBS)专有配置,默认false,采用CGLIB作为数据源自动代理的实现方式 |
-| transport.enableClientBatchSendRequest            | 客户端事务消息请求是否批量合并发送   |默认true，false单条发送 |
-| client.log.exceptionRate                | 日志异常输出概率 |  默认100，目前用于undo回滚失败时异常堆栈输出，百分之一的概率输出，回滚失败基本是脏数据，无需输出堆栈占用硬盘空间  |
-| service.vgroupMapping.my_test_tx_group   | 事务群组（附录1）   |my_test_tx_group为分组，配置项值为TC集群名 |
-| service.default.grouplist                 | TC服务列表（附录2） |  仅注册中心为file时使用  |
-| service.disableGlobalTransaction          | 全局事务开关 |  默认false。false为开启，true为关闭  |
-| client.tm.degradeCheck | 降级开关 |  默认false。业务侧根据连续错误数自动降级不走seata事务(详细介绍请阅读附录6)  |
-| client.tm.degradeCheckAllowTimes | 升降级达标阈值 | 默认10 |
-| client.tm.degradeCheckPeriod | 服务自检周期 | 默认2000,单位ms.每2秒进行一次服务自检,来决定 |
-| client.rm.reportSuccessEnable   | 是否上报一阶段成功   |true、false，从1.1.0版本开始,默认false.true用于保持分支事务生命周期记录完整，false可提高不少性能 |
-| client.rm.asyncCommitBufferLimit          | 异步提交缓存队列长度 | 默认10000。 二阶段提交成功，RM异步清理undo队列  |
-| client.rm.lock.retryInterval                | 校验或占用全局锁重试间隔 |  默认10，单位毫秒  |
-| client.rm.lock.retryTimes                   | 校验或占用全局锁重试次数 |  默认30  |
-| client.rm.lock.retryPolicyBranchRollbackOnConflict    | 分支事务与其它全局回滚事务冲突时锁策略 |  默认true，优先释放本地锁让回滚成功  |
-| client.rm.reportRetryCount                 | 一阶段结果上报TC重试次数 |  默认5次  | 1.4.1版本新增 |
-| client.rm.tableMetaCheckEnable            | 自动刷新缓存中的表结构 |  默认false  | 1.5.1版本新增 | 
-| client.rm.tableMetaCheckerInterval | 定时刷新缓存中表结构间隔时间 | 默认60秒 |
-| client.rm.sagaBranchRegisterEnable | 是否开启saga分支注册 | Saga模式中分支状态存储在状态机本地数据库中，可通过状态机进行提交或回滚，为提高性能可考虑不用向TC注册Saga分支，但需考虑状态机的可用性，默认false |
-| client.rm.sagaJsonParser | saga模式中数据序列化方式 | 默认fastjson,可选jackson | 1.5.1版本新增 |
-| client.rm.tccActionInterceptorOrder | tcc拦截器顺序 | 默认Ordered.HIGHEST_PRECEDENCE + 1000，保证拦截器在本地事务拦截器之前执行，也可自定义tcc和业务开发的拦截器执行顺序 | 1.5.1版本新增 |
-| client.tm.commitRetryCount              | 一阶段全局提交结果上报TC重试次数 |  默认1次，建议大于1  |
-| client.tm.rollbackRetryCount            | 一阶段全局回滚结果上报TC重试次数 |  默认1次，建议大于1  |
-| client.tm.defaultGlobalTransactionTimeout | 全局事务超时时间 | 默认60秒，TM检测到分支事务超时或TC检测到TM未做二阶段上报超时后，发起对分支事务的回滚 | 1.4.0版本新增 |
-| client.tm.interceptorOrder | TM全局事务拦截器顺序 | 默认Ordered.HIGHEST_PRECEDENCE + 1000，保证拦截器在本地事务拦截器之前执行，也可自定义全局事务和业务开发的拦截器执行顺序 | 1.5.1版本新增 |
-| client.undo.dataValidation          | 二阶段回滚镜像校验 |  默认true开启，false关闭 |
-| client.undo.logSerialization        | undo序列化方式 |  默认jackson  |
-| client.undo.logTable                | 自定义undo表名 |  默认undo_log  |
-| client.undo.onlyCareUpdateColumns | 只生成被更新列的镜像 | 默认true |
-| client.undo.compress.enable | undo log压缩开关 | 默认true | 1.4.1版本新增 | 
-| client.undo.compress.type | undo log压缩算法 | 默认zip,可选NONE(不压缩)、GZIP、ZIP、SEVENZ、BZIP2、LZ4、DEFLATER、ZSTD | 1.4.1版本新增 |
-| client.undo.compress.threshold | undo log压缩阈值 | 默认值64k，压缩开关开启且undo log大小超过阈值时才进行压缩 | 1.4.1版本新增 |
-| client.rm.sqlParserType                | sql解析类型 |  默认druid,可选antlr  |
-
+| key| desc                    | remark                                                                          | change record |
+|-------------------------------------------|-------------------------|---------------------------------------------------------------------------------|----------------|
+| seata.enabled   | 是否开启spring-boot自动装配     | true、false,(SSBS)专有配置，默认true（附录4）                                               |
+| seata.enableAutoDataSourceProxy=true | 是否开启数据源自动代理             | true、false,seata-spring-boot-starter(SSBS)专有配置,SSBS默认会开启数据源自动代理,可通过该配置项关闭.      |
+| seata.useJdkProxy=false | 是否使用JDK代理作为数据源自动代理的实现方式 | true、false,(SSBS)专有配置,默认false,采用CGLIB作为数据源自动代理的实现方式                             |
+| transport.enableClientBatchSendRequest            | 客户端事务消息请求是否批量合并发送       | 默认true，false单条发送                                                                |
+| client.log.exceptionRate                | 日志异常输出概率                | 默认100，目前用于undo回滚失败时异常堆栈输出，百分之一的概率输出，回滚失败基本是脏数据，无需输出堆栈占用硬盘空间                     |
+| service.vgroupMapping.my_test_tx_group   | 事务群组（附录1）               | my_test_tx_group为分组，配置项值为TC集群名                                                  |
+| service.default.grouplist                 | TC服务列表（附录2）             | 仅注册中心为file时使用                                                                   |
+| service.disableGlobalTransaction          | 全局事务开关                  | 默认false。false为开启，true为关闭                                                        |
+| client.tm.degradeCheck | 降级开关                    | 默认false。业务侧根据连续错误数自动降级不走seata事务(详细介绍请阅读附录6)                                     |
+| client.tm.degradeCheckAllowTimes | 升降级达标阈值                 | 默认10                                                                            |
+| client.tm.degradeCheckPeriod | 服务自检周期                  | 默认2000,单位ms.每2秒进行一次服务自检,来决定                                                     |
+| client.rm.reportSuccessEnable   | 是否上报一阶段成功               | true、false，从1.1.0版本开始,默认false.true用于保持分支事务生命周期记录完整，false可提高不少性能                 |
+| client.rm.asyncCommitBufferLimit          | 异步提交缓存队列长度              | 默认10000。 二阶段提交成功，RM异步清理undo队列                                                   |
+| client.rm.lock.retryInterval                | 校验或占用全局锁重试间隔            | 默认10，单位毫秒                                                                       |
+| client.rm.lock.retryTimes                   | 校验或占用全局锁重试次数            | 默认30                                                                            |
+| client.rm.lock.retryPolicyBranchRollbackOnConflict    | 分支事务与其它全局回滚事务冲突时锁策略     | 默认true，优先释放本地锁让回滚成功                                                             |
+| client.rm.reportRetryCount                 | 一阶段结果上报TC重试次数           | 默认5次                                                                            | 1.4.1版本新增 |
+| client.rm.tableMetaCheckEnable            | 自动刷新缓存中的表结构             | 默认false                                                                         | 1.5.1版本新增 | 
+| client.rm.tableMetaCheckerInterval | 定时刷新缓存中表结构间隔时间          | 默认60秒                                                                           |
+| client.rm.sagaBranchRegisterEnable | 是否开启saga分支注册            | Saga模式中分支状态存储在状态机本地数据库中，可通过状态机进行提交或回滚，为提高性能可考虑不用向TC注册Saga分支，但需考虑状态机的可用性，默认false |
+| client.rm.sagaJsonParser | saga模式中数据序列化方式          | 默认fastjson,可选jackson                                                            | 1.5.1版本新增 |
+| client.rm.tccActionInterceptorOrder | tcc拦截器顺序                | 默认Ordered.HIGHEST_PRECEDENCE + 1000，保证拦截器在本地事务拦截器之前执行，也可自定义tcc和业务开发的拦截器执行顺序     | 1.5.1版本新增 |
+| client.tm.commitRetryCount              | 一阶段全局提交结果上报TC重试次数       | 默认1次，建议大于1                                                                      |
+| client.tm.rollbackRetryCount            | 一阶段全局回滚结果上报TC重试次数       | 默认1次，建议大于1                                                                      |
+| client.tm.defaultGlobalTransactionTimeout | 全局事务超时时间                | 默认60秒，TM检测到分支事务超时或TC检测到TM未做二阶段上报超时后，发起对分支事务的回滚                                  | 1.4.0版本新增 |
+| client.tm.interceptorOrder | TM全局事务拦截器顺序             | 默认Ordered.HIGHEST_PRECEDENCE + 1000，保证拦截器在本地事务拦截器之前执行，也可自定义全局事务和业务开发的拦截器执行顺序    | 1.5.1版本新增 |
+| client.undo.dataValidation          | 二阶段回滚镜像校验               | 默认true开启，false关闭                                                                |
+| client.undo.logSerialization        | undo序列化方式               | 默认jackson                                                                       |
+| client.undo.logTable                | 自定义undo表名               | 默认undo_log                                                                      |
+| client.undo.onlyCareUpdateColumns | 只生成被更新列的镜像              | 默认true                                                                          |
+| client.undo.compress.enable | undo log压缩开关            | 默认true                                                                          | 1.4.1版本新增 | 
+| client.undo.compress.type | undo log压缩算法            | 默认zip,可选NONE(不压缩)、GZIP、ZIP、SEVENZ、BZIP2、LZ4、DEFLATER、ZSTD                       | 1.4.1版本新增 |
+| client.undo.compress.threshold | undo log压缩阈值            | 默认值64k，压缩开关开启且undo log大小超过阈值时才进行压缩                                              | 1.4.1版本新增 |
+| client.rm.sqlParserType                | sql解析类型                 | 默认druid,可选antlr                                                                 |
+| seata.client.rm.applicationDataLimitCheck | 客户端应用数据是否开启限制             | 默认false                                                                         |
+| seata.client.rm.applicationDataLimit | 客户端应用数据上报限制             | 默认64000                                                                         |
 
 <details>
   <summary><mark>参数同步到配置中心使用demo</mark></summary>
